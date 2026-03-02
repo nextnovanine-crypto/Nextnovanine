@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NEXTNOVA — KI Agent Builder</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #060608;
+      --surface: #0e0e14;
+      --accent1: #e8ff47;
+      --accent2: #ff4d6d;
+      --accent3: #47c2ff;
+      --text: #f0ede6;
+      --muted: #6b6870;
+      --border: rgba(255,255,255,0.07);
+    }
+    html, body { height: 100%; }
+    body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-weight: 300; display: flex; flex-direction: column; cursor: none; overflow: hidden; }
+
+    /* CURSOR */
+    .cursor { position: fixed; width: 12px; height: 12px; background: var(--accent1); border-radius: 50%; pointer-events: none; z-index: 9999; transform: translate(-50%,-50%); transition: width .3s, height .3s; mix-blend-mode: difference; }
+    .cursor-ring { position: fixed; width: 40px; height: 40px; border: 1px solid rgba(232,255,71,0.4); border-radius: 50%; pointer-events: none; z-index: 9998; transform: translate(-50%,-50%); transition: transform .15s ease-out; }
+
+    /* NAV */
+    nav { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 16px 48px; background: rgba(6,6,8,0.98); border-bottom: 1px solid var(--border); z-index: 100; }
+    .logo { font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 4px; color: var(--accent1); text-decoration: none; }
+    .nav-links { display: flex; gap: 28px; list-style: none; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: 13px; letter-spacing: 1px; text-transform: uppercase; transition: color .3s; }
+    .nav-links a:hover { color: var(--text); }
+    .nav-links a.active { color: var(--accent1); }
+    .nav-right { display: flex; align-items: center; gap: 16px; }
+    .nav-username { font-size: 13px; color: var(--muted); }
+    .nav-logout { background: none; border: 1px solid var(--border); color: var(--muted); padding: 7px 14px; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all .3s; border-radius: 2px; }
+    .nav-logout:hover { border-color: var(--accent2); color: var(--accent2); }
+
+    /* TOOLBAR */
+    .toolbar { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 10px 48px; background: var(--surface); border-bottom: 1px solid var(--border); }
+    .toolbar-left { display: flex; align-items: center; gap: 16px; }
+    .toolbar-title { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 3px; color: var(--text); }
+    .toolbar-badge { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; padding: 3px 10px; border-radius: 2px; background: rgba(232,255,71,0.1); color: var(--accent1); border: 1px solid rgba(232,255,71,0.2); }
+    .toolbar-right { display: flex; align-items: center; gap: 10px; }
+    .toolbar-btn { background: none; border: 1px solid var(--border); color: var(--muted); padding: 7px 16px; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all .3s; border-radius: 2px; display: flex; align-items: center; gap: 6px; }
+    .toolbar-btn:hover { border-color: var(--accent1); color: var(--accent1); }
+    .toolbar-btn.primary { background: var(--accent1); color: #000; border-color: var(--accent1); font-weight: 500; }
+    .toolbar-btn.primary:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(232,255,71,0.2); }
+
+    /* MAIN */
+    .main { flex: 1; display: flex; overflow: hidden; }
+
+    /* SIDEBAR */
+    .sidebar { width: 260px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; }
+    .sidebar-section { padding: 16px; border-bottom: 1px solid var(--border); }
+    .sidebar-section-title { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+    .sidebar-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 2px; margin-bottom: 6px; cursor: pointer; transition: all .2s; font-size: 13px; color: var(--text); text-decoration: none; }
+    .sidebar-item:hover { border-color: rgba(232,255,71,0.3); color: var(--accent1); background: rgba(232,255,71,0.03); }
+    .sidebar-item.active { border-color: var(--accent1); color: var(--accent1); background: rgba(232,255,71,0.05); }
+    .sidebar-item-icon { font-size: 16px; }
+    .sidebar-item-info { flex: 1; }
+    .sidebar-item-name { font-size: 13px; font-weight: 400; }
+    .sidebar-item-desc { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+    /* IFRAME CONTAINER */
+    .iframe-container { flex: 1; position: relative; background: var(--bg); }
+    .flowise-iframe { width: 100%; height: 100%; border: none; display: block; }
+
+    /* LOGIN PROMPT */
+    .login-prompt { flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 16px; text-align: center; padding: 40px; }
+    .login-prompt h2 { font-family: 'Bebas Neue', sans-serif; font-size: 40px; }
+    .login-prompt p { color: var(--muted); font-size: 15px; }
+    .login-prompt a { background: var(--accent1); color: #000; padding: 14px 32px; font-size: 13px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; text-decoration: none; border-radius: 2px; }
+
+    /* LOADING */
+    .iframe-loading { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg); z-index: 10; }
+    .loading-spinner { width: 36px; height: 36px; border: 2px solid var(--border); border-top-color: var(--accent1); border-radius: 50%; animation: spin .7s linear infinite; margin-bottom: 16px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .iframe-loading p { color: var(--muted); font-size: 14px; }
+    .iframe-loading .loading-logo { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 4px; color: var(--accent1); margin-bottom: 24px; }
+
+    /* HELP PANEL */
+    .help-panel { position: fixed; right: 0; top: 0; bottom: 0; width: 320px; background: var(--surface); border-left: 1px solid var(--border); z-index: 200; transform: translateX(100%); transition: transform .3s ease; padding: 24px; overflow-y: auto; }
+    .help-panel.open { transform: translateX(0); }
+    .help-panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+    .help-panel-title { font-family: 'Bebas Neue', sans-serif; font-size: 24px; }
+    .help-close { background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; transition: color .3s; }
+    .help-close:hover { color: var(--text); }
+    .help-step { padding: 16px 0; border-bottom: 1px solid var(--border); }
+    .help-step:last-child { border-bottom: none; }
+    .help-step-num { font-family: 'Bebas Neue', sans-serif; font-size: 36px; color: var(--accent1); line-height: 1; margin-bottom: 6px; }
+    .help-step-title { font-size: 14px; font-weight: 500; margin-bottom: 6px; }
+    .help-step-desc { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+    @media (max-width: 900px) {
+      nav { padding: 14px 20px; }
+      .nav-links { display: none; }
+      .toolbar { padding: 10px 20px; }
+      .sidebar { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <!-- NAV -->
+  <nav>
+    <a href="index.html" class="logo">NEXTNOVA</a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="forum.html">Forum</a></li>
+      <li><a href="builder.html" class="active">KI Builder</a></li>
+      <li><a href="dashboard.html">Dashboard</a></li>
+    </ul>
+    <div class="nav-right">
+      <span class="nav-username" id="navUsername"></span>
+      <button class="nav-logout" onclick="handleLogout()">Logout</button>
+    </div>
+  </nav>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <div class="toolbar-title">KI AGENT BUILDER</div>
+      <span class="toolbar-badge">Powered by Flowise</span>
+    </div>
+    <div class="toolbar-right">
+      <button class="toolbar-btn" onclick="toggleHelp()">❓ Anleitung</button>
+      <button class="toolbar-btn" onclick="reloadIframe()">🔄 Neu laden</button>
+      <button class="toolbar-btn primary" onclick="openFlowise()">↗ Vollbild</button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main" id="mainContent">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">Navigation</div>
+        <a class="sidebar-item active" onclick="loadPage('https://cloud.flowiseai.com')">
+          <span class="sidebar-item-icon">🏠</span>
+          <div class="sidebar-item-info">
+            <div class="sidebar-item-name">Übersicht</div>
+            <div class="sidebar-item-desc">Alle deine Agenten</div>
+          </div>
+        </a>
+        <a class="sidebar-item" onclick="loadPage('https://cloud.flowiseai.com/chatflows')">
+          <span class="sidebar-item-icon">🤖</span>
+          <div class="sidebar-item-info">
+            <div class="sidebar-item-name">Chatflows</div>
+            <div class="sidebar-item-desc">KI Agenten bauen</div>
+          </div>
+        </a>
+        <a class="sidebar-item" onclick="loadPage('https://cloud.flowiseai.com/agentflows')">
+          <span class="sidebar-item-icon">⚡</span>
+          <div class="sidebar-item-info">
+            <div class="sidebar-item-name">Agentflows</div>
+            <div class="sidebar-item-desc">Autonome Agenten</div>
+          </div>
+        </a>
+        <a class="sidebar-item" onclick="loadPage('https://cloud.flowiseai.com/marketplaces')">
+          <span class="sidebar-item-icon">🛒</span>
+          <div class="sidebar-item-info">
+            <div class="sidebar-item-name">Marketplace</div>
+            <div class="sidebar-item-desc">Templates & Vorlagen</div>
+          </div>
+        </a>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">Tools</div>
+        <a class="sidebar-item" onclick="loadPage('https://cloud.flowiseai.com/credentials')">
+          <span class="sidebar-item-icon">🔑</span>
+          <div class="sidebar-item-info">
+            <div class="sidebar-item-name">Credentials</div>
+            <div class="sidebar-item-desc">API Keys verwalten</div>
+          </div>
+        </a>
+        <a class="sidebar-item" onclick="loadPage('https://cloud.flowiseai.com/variables')">
+          <span class="sidebar-item-icon">⚙️</span>
+          <div class="sidebar-item-info">
+            <div class="sidebar-item-name">Variables</div>
+            <div class="sidebar-item-desc">Umgebungsvariablen</div>
+          </div>
+        </a>
+        <a class="sidebar-item" onclick="loadPage('https://cloud.flowiseai.com/apikey')">
+          <span class="sidebar-item-icon">🗝️</span>
+          <div class="sidebar-item-info">
+            <div class="sidebar-item-name">API Keys</div>
+            <div class="sidebar-item-desc">Deine API Zugänge</div>
+          </div>
+        </a>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">Schnellstart</div>
+        <button class="toolbar-btn" style="width:100%;justify-content:center;margin-bottom:8px;" onclick="toggleHelp()">
+          📖 Anleitung anzeigen
+        </button>
+        <button class="toolbar-btn primary" style="width:100%;justify-content:center;" onclick="openFlowise()">
+          ↗ In Flowise öffnen
+        </button>
+      </div>
+    </div>
+
+    <!-- Iframe -->
+    <div class="iframe-container">
+      <div class="iframe-loading" id="iframeLoading">
+        <div class="loading-logo">NEXTNOVA</div>
+        <div class="loading-spinner"></div>
+        <p>Flowise wird geladen...</p>
+      </div>
+      <iframe
+        id="flowiseFrame"
+        class="flowise-iframe"
+        src="https://cloud.flowiseai.com"
+        onload="hideLoading()"
+        allow="fullscreen"
+      ></iframe>
+    </div>
+  </div>
+
+  <!-- HELP PANEL -->
+  <div class="help-panel" id="helpPanel">
+    <div class="help-panel-header">
+      <div class="help-panel-title">ANLEITUNG</div>
+      <button class="help-close" onclick="toggleHelp()">✕</button>
+    </div>
+    <div class="help-step">
+      <div class="help-step-num">01</div>
+      <div class="help-step-title">Einloggen</div>
+      <div class="help-step-desc">Logge dich mit deinem Flowise Account ein wenn du dazu aufgefordert wirst.</div>
+    </div>
+    <div class="help-step">
+      <div class="help-step-num">02</div>
+      <div class="help-step-title">Neuen Chatflow erstellen</div>
+      <div class="help-step-desc">Klicke auf "Add New" um einen neuen KI Agenten zu erstellen. Wähle zwischen Chatflow und Agentflow.</div>
+    </div>
+    <div class="help-step">
+      <div class="help-step-num">03</div>
+      <div class="help-step-title">Nodes verbinden</div>
+      <div class="help-step-desc">Ziehe Nodes per Drag & Drop auf die Canvas und verbinde sie miteinander. Trigger → LLM → Output.</div>
+    </div>
+    <div class="help-step">
+      <div class="help-step-num">04</div>
+      <div class="help-step-title">System Prompt setzen</div>
+      <div class="help-step-desc">Klicke auf den LLM Node und gib deinen System Prompt ein — das ist die Persönlichkeit deines Agenten.</div>
+    </div>
+    <div class="help-step">
+      <div class="help-step-num">05</div>
+      <div class="help-step-title">Speichern & testen</div>
+      <div class="help-step-desc">Klicke auf "Save" und teste deinen Agenten direkt im Chat-Fenster rechts unten.</div>
+    </div>
+    <div class="help-step">
+      <div class="help-step-num">06</div>
+      <div class="help-step-title">Einbetten</div>
+      <div class="help-step-desc">Klicke auf "&lt;/&gt; Embed" um den Code zu kopieren und deinen Agenten in deine Website einzubinden.</div>
+    </div>
+  </div>
+
+  <script>
+    const { createClient } = supabase;
+    const sb = createClient(
+      'https://qegdrvvxgiczozqwmyyx.supabase.co',
+      'sb_publishable_T2bgxhXqpjZz63xVwojR-Q_Im6knDeF'
+    );
+
+    // Cursor
+    const cursor = document.getElementById('cursor');
+    const ring = document.getElementById('cursorRing');
+    let mx=0,my=0,rx=0,ry=0;
+    document.addEventListener('mousemove', e => { mx=e.clientX; my=e.clientY; });
+    (function animCursor() {
+      cursor.style.left=mx+'px'; cursor.style.top=my+'px';
+      rx+=(mx-rx)*.12; ry+=(my-ry)*.12;
+      ring.style.left=rx+'px'; ring.style.top=ry+'px';
+      requestAnimationFrame(animCursor);
+    })();
+
+    // Auth check
+    async function init() {
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) { window.location.href = 'auth.html'; return; }
+      const name = session.user.user_metadata?.full_name || session.user.email.split('@')[0];
+      document.getElementById('navUsername').textContent = name;
+    }
+
+    function hideLoading() {
+      setTimeout(() => {
+        const loading = document.getElementById('iframeLoading');
+        if (loading) loading.style.display = 'none';
+      }, 1000);
+    }
+
+    function loadPage(url) {
+      document.getElementById('iframeLoading').style.display = 'flex';
+      document.getElementById('flowiseFrame').src = url;
+      document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+    }
+
+    function reloadIframe() {
+      document.getElementById('iframeLoading').style.display = 'flex';
+      const frame = document.getElementById('flowiseFrame');
+      frame.src = frame.src;
+    }
+
+    function openFlowise() {
+      window.open('https://cloud.flowiseai.com', '_blank');
+    }
+
+    function toggleHelp() {
+      document.getElementById('helpPanel').classList.toggle('open');
+    }
+
+    async function handleLogout() {
+      await sb.auth.signOut();
+      window.location.href = 'auth.html';
+    }
+
+    init();
+  </script>
+</body>
+</html>
