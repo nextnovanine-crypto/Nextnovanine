@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NEXTNOVA — Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #060608;
+      --surface: #0e0e14;
+      --accent1: #e8ff47;
+      --accent2: #ff4d6d;
+      --accent3: #47c2ff;
+      --text: #f0ede6;
+      --muted: #6b6870;
+      --border: rgba(255,255,255,0.07);
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-weight: 300; min-height: 100vh; cursor: none; }
+
+    /* CURSOR */
+    .cursor { position: fixed; width: 12px; height: 12px; background: var(--accent1); border-radius: 50%; pointer-events: none; z-index: 9999; transform: translate(-50%,-50%); transition: width .3s, height .3s; mix-blend-mode: difference; }
+    .cursor-ring { position: fixed; width: 40px; height: 40px; border: 1px solid rgba(232,255,71,0.4); border-radius: 50%; pointer-events: none; z-index: 9998; transform: translate(-50%,-50%); transition: transform .15s ease-out; }
+
+    /* NAV */
+    nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 18px 48px; background: rgba(6,6,8,0.95); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); }
+    .logo { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 4px; color: var(--accent1); text-decoration: none; }
+    .nav-links { display: flex; gap: 32px; list-style: none; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: 13px; letter-spacing: 1px; text-transform: uppercase; transition: color .3s; }
+    .nav-links a:hover { color: var(--text); }
+    .nav-links a.active { color: var(--accent1); }
+    .nav-right { display: flex; align-items: center; gap: 16px; }
+    .nav-username { font-size: 13px; color: var(--muted); }
+    .nav-logout { background: none; border: 1px solid var(--border); color: var(--muted); padding: 8px 16px; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all .3s; border-radius: 2px; }
+    .nav-logout:hover { border-color: var(--accent2); color: var(--accent2); }
+
+    /* LAYOUT */
+    .container { max-width: 1200px; margin: 0 auto; padding: 100px 32px 60px; }
+
+    /* WELCOME */
+    .welcome { display: flex; align-items: center; justify-content: space-between; margin-bottom: 40px; flex-wrap: wrap; gap: 20px; }
+    .welcome-text h1 { font-family: 'Bebas Neue', sans-serif; font-size: 52px; line-height: 1; }
+    .welcome-text h1 span { color: var(--accent1); }
+    .welcome-text p { color: var(--muted); font-size: 15px; margin-top: 6px; }
+    .trial-banner { background: rgba(232,255,71,0.06); border: 1px solid rgba(232,255,71,0.2); padding: 14px 24px; border-radius: 2px; display: flex; align-items: center; gap: 12px; }
+    .trial-banner-icon { font-size: 20px; }
+    .trial-banner-text { font-size: 13px; }
+    .trial-banner-text strong { color: var(--accent1); }
+    .upgrade-btn { background: var(--accent1); color: #000; border: none; padding: 8px 18px; font-size: 12px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; font-family: 'DM Sans', sans-serif; border-radius: 2px; margin-left: 16px; transition: transform .2s; }
+    .upgrade-btn:hover { transform: translateY(-2px); }
+
+    /* STATS */
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; margin-bottom: 32px; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); padding: 24px 28px; transition: border-color .3s; }
+    .stat-card:hover { border-color: rgba(232,255,71,0.2); }
+    .stat-label { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+    .stat-value { font-family: 'Bebas Neue', sans-serif; font-size: 48px; line-height: 1; color: var(--text); }
+    .stat-value.yellow { color: var(--accent1); }
+    .stat-value.blue { color: var(--accent3); }
+    .stat-value.red { color: var(--accent2); }
+    .stat-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+    /* MAIN GRID */
+    .main-grid { display: grid; grid-template-columns: 1fr 340px; gap: 24px; }
+
+    /* SECTION */
+    .section { margin-bottom: 24px; }
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .section-title { font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 2px; }
+    .section-link { font-size: 12px; color: var(--muted); text-decoration: none; letter-spacing: 1px; text-transform: uppercase; transition: color .3s; }
+    .section-link:hover { color: var(--accent1); }
+
+    /* RECENT POSTS */
+    .post-item { background: var(--surface); border: 1px solid var(--border); padding: 18px 22px; margin-bottom: 2px; display: flex; align-items: center; gap: 16px; cursor: pointer; transition: border-color .3s, transform .3s; text-decoration: none; color: inherit; }
+    .post-item:hover { border-color: rgba(232,255,71,0.2); transform: translateX(4px); }
+    .post-item-cat { width: 4px; height: 40px; border-radius: 2px; flex-shrink: 0; }
+    .post-item-info { flex: 1; }
+    .post-item-title { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+    .post-item-meta { font-size: 12px; color: var(--muted); }
+    .post-item-likes { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 4px; }
+
+    /* QUICK ACTIONS */
+    .actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; margin-bottom: 24px; }
+    .action-card { background: var(--surface); border: 1px solid var(--border); padding: 22px; cursor: pointer; transition: all .3s; text-decoration: none; color: inherit; display: block; }
+    .action-card:hover { border-color: rgba(232,255,71,0.3); transform: translateY(-3px); }
+    .action-icon { font-size: 28px; margin-bottom: 10px; }
+    .action-title { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+    .action-desc { font-size: 12px; color: var(--muted); }
+
+    /* SIDEBAR */
+    .sidebar { display: flex; flex-direction: column; gap: 16px; }
+    .sidebar-card { background: var(--surface); border: 1px solid var(--border); padding: 24px; border-radius: 2px; }
+    .sidebar-card-title { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+
+    /* PROFILE */
+    .profile-avatar { width: 64px; height: 64px; border-radius: 50%; background: rgba(232,255,71,0.1); border: 2px solid var(--accent1); display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--accent1); margin: 0 auto 16px; }
+    .profile-name { text-align: center; font-size: 16px; font-weight: 500; margin-bottom: 4px; }
+    .profile-email { text-align: center; font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+    .profile-badge { display: flex; justify-content: center; }
+    .badge { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; padding: 4px 12px; border-radius: 20px; }
+    .badge-starter { background: rgba(107,104,112,0.2); color: var(--muted); border: 1px solid var(--border); }
+    .badge-pro { background: rgba(232,255,71,0.1); color: var(--accent1); border: 1px solid rgba(232,255,71,0.3); }
+    .badge-elite { background: rgba(71,194,255,0.1); color: var(--accent3); border: 1px solid rgba(71,194,255,0.3); }
+    .profile-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; margin-top: 16px; }
+    .profile-stat { background: var(--bg); padding: 12px; text-align: center; }
+    .profile-stat-num { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--accent1); }
+    .profile-stat-label { font-size: 11px; color: var(--muted); }
+
+    /* MEMBERSHIP */
+    .membership-plan { font-family: 'Bebas Neue', sans-serif; font-size: 36px; color: var(--accent1); margin-bottom: 4px; }
+    .membership-price { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+    .membership-feature { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); padding: 6px 0; border-bottom: 1px solid var(--border); }
+    .membership-feature:last-of-type { border-bottom: none; margin-bottom: 16px; }
+    .membership-feature::before { content: '✓'; color: var(--accent1); font-size: 11px; flex-shrink: 0; }
+    .upgrade-full-btn { display: block; text-align: center; background: var(--accent1); color: #000; padding: 12px; font-size: 12px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; text-decoration: none; border-radius: 2px; transition: transform .2s; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; width: 100%; }
+    .upgrade-full-btn:hover { transform: translateY(-2px); }
+
+    /* LOADING */
+    .loading { text-align: center; padding: 40px; color: var(--muted); }
+    .loading-spinner { width: 28px; height: 28px; border: 2px solid var(--border); border-top-color: var(--accent1); border-radius: 50%; animation: spin .7s linear infinite; margin: 0 auto 12px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .empty-state { text-align: center; padding: 32px; color: var(--muted); font-size: 14px; background: var(--surface); border: 1px solid var(--border); }
+
+    @media (max-width: 900px) {
+      nav { padding: 14px 20px; }
+      .nav-links { display: none; }
+      .container { padding: 80px 16px 40px; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .main-grid { grid-template-columns: 1fr; }
+      .actions-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <nav>
+    <a href="index.html" class="logo">NEXTNOVA</a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="forum.html">Forum</a></li>
+      <li><a href="dashboard.html" class="active">Dashboard</a></li>
+    </ul>
+    <div class="nav-right">
+      <span class="nav-username" id="navUsername"></span>
+      <button class="nav-logout" onclick="handleLogout()">Logout</button>
+    </div>
+  </nav>
+
+  <div class="container" id="mainContent">
+    <div class="loading">
+      <div class="loading-spinner"></div>
+      Dashboard wird geladen...
+    </div>
+  </div>
+
+  <script>
+    const { createClient } = supabase;
+    const sb = createClient(
+      'https://qegdrvvxgiczozqwmyyx.supabase.co',
+      'sb_publishable_T2bgxhXqpjZz63xVwojR-Q_Im6knDeF'
+    );
+
+    let currentUser = null;
+
+    // Cursor
+    const cursor = document.getElementById('cursor');
+    const ring = document.getElementById('cursorRing');
+    let mx=0,my=0,rx=0,ry=0;
+    document.addEventListener('mousemove', e => { mx=e.clientX; my=e.clientY; });
+    (function animCursor() {
+      cursor.style.left=mx+'px'; cursor.style.top=my+'px';
+      rx+=(mx-rx)*.12; ry+=(my-ry)*.12;
+      ring.style.left=rx+'px'; ring.style.top=ry+'px';
+      requestAnimationFrame(animCursor);
+    })();
+
+    async function init() {
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) { window.location.href = 'auth.html'; return; }
+      currentUser = session.user;
+
+      const name = currentUser.user_metadata?.full_name || currentUser.email.split('@')[0];
+      document.getElementById('navUsername').textContent = name;
+
+      // Load posts count for this user
+      const { count: myPostsCount } = await sb.from('posts')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', currentUser.id);
+
+      // Load total posts
+      const { count: totalPosts } = await sb.from('posts')
+        .select('*', { count: 'exact', head: true });
+
+      // Load recent posts
+      const { data: recentPosts } = await sb.from('posts')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      // Calculate trial days
+      const createdAt = new Date(currentUser.created_at);
+      const now = new Date();
+      const diffDays = Math.floor((now - createdAt) / (1000 * 60 * 60 * 24));
+      const trialDaysLeft = Math.max(0, 5 - diffDays);
+
+      renderDashboard(name, myPostsCount || 0, totalPosts || 0, recentPosts || [], trialDaysLeft);
+    }
+
+    function renderDashboard(name, myPosts, totalPosts, recentPosts, trialDaysLeft) {
+      const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2);
+
+      document.getElementById('mainContent').innerHTML = `
+        <!-- Welcome -->
+        <div class="welcome">
+          <div class="welcome-text">
+            <h1>HEY, <span>${name.split(' ')[0].toUpperCase()}</span> 👋</h1>
+            <p>Willkommen zurück in deiner KI-Community</p>
+          </div>
+          ${trialDaysLeft > 0 ? `
+          <div class="trial-banner">
+            <div class="trial-banner-icon">⚡</div>
+            <div class="trial-banner-text">
+              Noch <strong>${trialDaysLeft} Tage</strong> kostenlos testen
+            </div>
+            <button class="upgrade-btn" onclick="alert('Upgrade coming soon!')">Upgrade →</button>
+          </div>` : ''}
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Meine Beiträge</div>
+            <div class="stat-value yellow">${myPosts}</div>
+            <div class="stat-sub">im Forum</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Community Posts</div>
+            <div class="stat-value">${totalPosts}</div>
+            <div class="stat-sub">insgesamt</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Trial Status</div>
+            <div class="stat-value blue">${trialDaysLeft}</div>
+            <div class="stat-sub">Tage verbleibend</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Membership</div>
+            <div class="stat-value" style="font-size:28px;padding-top:8px;">STARTER</div>
+            <div class="stat-sub">kostenlos</div>
+          </div>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="main-grid">
+          <div>
+            <!-- Quick Actions -->
+            <div class="section">
+              <div class="section-header">
+                <div class="section-title">SCHNELLZUGRIFF</div>
+              </div>
+              <div class="actions-grid">
+                <a href="forum.html" class="action-card">
+                  <div class="action-icon">💬</div>
+                  <div class="action-title">Forum</div>
+                  <div class="action-desc">Diskutiere mit der Community</div>
+                </a>
+                <a href="forum.html" class="action-card" onclick="setTimeout(()=>document.querySelector('.new-post-btn')?.click(),500)">
+                  <div class="action-icon">✍️</div>
+                  <div class="action-title">Neuer Beitrag</div>
+                  <div class="action-desc">Teile dein Wissen</div>
+                </a>
+                <div class="action-card" onclick="alert('KI Projekte coming soon! 🚀')">
+                  <div class="action-icon">🤖</div>
+                  <div class="action-title">KI Projekte</div>
+                  <div class="action-desc">Deine Agenten verwalten</div>
+                </div>
+                <div class="action-card" onclick="alert('Tutorials coming soon! 📚')">
+                  <div class="action-icon">📚</div>
+                  <div class="action-title">Tutorials</div>
+                  <div class="action-desc">Lerne neue Skills</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Recent Forum Posts -->
+            <div class="section">
+              <div class="section-header">
+                <div class="section-title">NEUESTE BEITRÄGE</div>
+                <a href="forum.html" class="section-link">Alle anzeigen →</a>
+              </div>
+              ${recentPosts.length === 0 ? `
+                <div class="empty-state">Noch keine Beiträge — sei der Erste! 🚀</div>
+              ` : recentPosts.map(post => `
+                <a href="forum.html" class="post-item">
+                  <div class="post-item-cat" style="background:${getCatColor(post.category)}"></div>
+                  <div class="post-item-info">
+                    <div class="post-item-title">${escHtml(post.title)}</div>
+                    <div class="post-item-meta">von ${escHtml(post.author_name)} · ${timeAgo(post.created_at)}</div>
+                  </div>
+                  <div class="post-item-likes">❤️ ${post.likes || 0}</div>
+                </a>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- Sidebar -->
+          <div class="sidebar">
+            <!-- Profile -->
+            <div class="sidebar-card">
+              <div class="sidebar-card-title">Mein Profil</div>
+              <div class="profile-avatar">${initials}</div>
+              <div class="profile-name">${name}</div>
+              <div class="profile-email">${currentUser.email}</div>
+              <div class="profile-badge">
+                <span class="badge badge-starter">Starter Member</span>
+              </div>
+              <div class="profile-stats">
+                <div class="profile-stat">
+                  <div class="profile-stat-num">${myPosts}</div>
+                  <div class="profile-stat-label">Beiträge</div>
+                </div>
+                <div class="profile-stat">
+                  <div class="profile-stat-num">${trialDaysLeft}</div>
+                  <div class="profile-stat-label">Trial Tage</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Membership -->
+            <div class="sidebar-card">
+              <div class="sidebar-card-title">Membership</div>
+              <div class="membership-plan">STARTER</div>
+              <div class="membership-price">Kostenlos · ${trialDaysLeft} Tage Trial</div>
+              <div class="membership-feature">Forum Zugang</div>
+              <div class="membership-feature">5 KI Projekte</div>
+              <div class="membership-feature">Basis Tutorials</div>
+              <button class="upgrade-full-btn" onclick="alert('Upgrade zu Pro für €29/Monat — coming soon!')">
+                Upgrade zu Pro →
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function handleLogout() {
+      await sb.auth.signOut();
+      window.location.href = 'auth.html';
+    }
+
+    function getCatColor(cat) {
+      const map = { 'KI Projekt': '#e8ff47', 'Diskussion': '#47c2ff', 'Tutorial': '#ff4d6d', 'News': '#ffc847' };
+      return map[cat] || '#e8ff47';
+    }
+    function escHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+    function timeAgo(dateStr) {
+      const diff = Date.now() - new Date(dateStr).getTime();
+      const mins = Math.floor(diff/60000);
+      if (mins < 1) return 'Gerade eben';
+      if (mins < 60) return `vor ${mins} Min.`;
+      const hours = Math.floor(mins/60);
+      if (hours < 24) return `vor ${hours} Std.`;
+      const days = Math.floor(hours/24);
+      return `vor ${days} Tag${days>1?'en':''}`;
+    }
+
+    init();
+  </script>
+</body>
+</html>

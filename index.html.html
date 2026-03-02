@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NEXTNOVA — Community trifft KI</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #060608;
+      --surface: #0e0e14;
+      --accent1: #e8ff47;
+      --accent2: #ff4d6d;
+      --accent3: #47c2ff;
+      --text: #f0ede6;
+      --muted: #6b6870;
+      --border: rgba(255,255,255,0.07);
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      overflow-x: hidden;
+      cursor: none;
+    }
+
+    /* CURSOR */
+    .cursor { position: fixed; width: 12px; height: 12px; background: var(--accent1); border-radius: 50%; pointer-events: none; z-index: 9999; transform: translate(-50%,-50%); transition: width .3s, height .3s; mix-blend-mode: difference; }
+    .cursor-ring { position: fixed; width: 40px; height: 40px; border: 1px solid rgba(232,255,71,0.4); border-radius: 50%; pointer-events: none; z-index: 9998; transform: translate(-50%,-50%); transition: transform .15s ease-out; }
+
+    /* NAV */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 28px 60px;
+      transition: all 0.4s;
+    }
+    nav.scrolled {
+      background: rgba(6,6,8,0.92);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 18px 60px;
+    }
+    .logo { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 4px; color: var(--accent1); text-decoration: none; }
+    .nav-links { display: flex; gap: 40px; list-style: none; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: 13px; letter-spacing: 1px; text-transform: uppercase; transition: color .3s; }
+    .nav-links a:hover { color: var(--text); }
+    .nav-right { display: flex; gap: 16px; align-items: center; }
+    .nav-lang { color: var(--muted); font-size: 13px; letter-spacing: 1px; cursor: pointer; background: none; border: 1px solid var(--border); padding: 8px 14px; border-radius: 2px; transition: all .3s; }
+    .nav-lang:hover { color: var(--text); border-color: var(--text); }
+    .nav-cta { background: var(--accent1); color: #000; padding: 10px 24px; border-radius: 2px; font-size: 13px; font-weight: 500; text-decoration: none; letter-spacing: 1px; text-transform: uppercase; transition: transform .2s, box-shadow .2s; }
+    .nav-cta:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(232,255,71,0.3); }
+
+    /* HERO */
+    .hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 140px 60px 80px;
+      position: relative; overflow: hidden;
+    }
+    .blob { position: absolute; border-radius: 50%; filter: blur(90px); opacity: 0.12; animation: float 8s ease-in-out infinite; pointer-events: none; }
+    .blob1 { width: 700px; height: 700px; background: var(--accent1); top: -250px; right: -150px; }
+    .blob2 { width: 450px; height: 450px; background: var(--accent2); bottom: -100px; left: 50px; animation-delay: -3s; }
+    .blob3 { width: 300px; height: 300px; background: var(--accent3); top: 40%; left: 40%; animation-delay: -5s; }
+    @keyframes float { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-40px) scale(1.05); } }
+
+    .hero-tag { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: var(--accent1); margin-bottom: 24px; display: flex; align-items: center; gap: 12px; }
+    .hero-tag::before { content: ''; width: 30px; height: 1px; background: var(--accent1); }
+    .hero-tag .tag-en { color: var(--muted); }
+
+    h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(80px, 12vw, 180px); line-height: 0.92; margin-bottom: 40px; }
+    h1 .outline { -webkit-text-stroke: 1px rgba(240,237,230,0.25); color: transparent; }
+    h1 .accent1 { color: var(--accent1); }
+    h1 .accent3 { color: var(--accent3); }
+
+    .hero-desc { max-width: 540px; font-size: 17px; line-height: 1.8; color: var(--muted); margin-bottom: 16px; }
+    .hero-desc-en { max-width: 540px; font-size: 14px; line-height: 1.7; color: rgba(107,104,112,0.6); margin-bottom: 48px; font-style: italic; }
+
+    .hero-actions { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+    .btn-primary { background: var(--accent1); color: #000; padding: 18px 40px; border-radius: 2px; font-size: 14px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; text-decoration: none; display: inline-block; transition: transform .2s, box-shadow .2s; }
+    .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 16px 40px rgba(232,255,71,0.25); }
+    .btn-ghost { color: var(--text); font-size: 14px; letter-spacing: 1px; text-transform: uppercase; text-decoration: none; display: flex; align-items: center; gap: 10px; transition: gap .3s; }
+    .btn-ghost:hover { gap: 16px; }
+    .trial-note { font-size: 12px; color: var(--muted); margin-top: 16px; letter-spacing: 1px; }
+    .trial-note em { color: var(--accent1); font-style: normal; }
+
+    .hero-stats { display: flex; gap: 60px; margin-top: 100px; padding-top: 40px; border-top: 1px solid var(--border); flex-wrap: wrap; }
+    .stat-num { font-family: 'Bebas Neue', sans-serif; font-size: 52px; color: var(--text); line-height: 1; }
+    .stat-num em { color: var(--accent1); font-style: normal; }
+    .stat-label { font-size: 12px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-top: 4px; }
+
+    /* MARQUEE */
+    .marquee-section { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 20px 0; overflow: hidden; background: var(--surface); }
+    .marquee-track { display: flex; white-space: nowrap; animation: marquee 25s linear infinite; }
+    .marquee-item { padding: 0 40px; font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 4px; color: var(--muted); display: flex; align-items: center; gap: 40px; }
+    .marquee-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent1); }
+    @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+    /* FEATURES */
+    .features { padding: 140px 60px; }
+    .section-label { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: var(--accent1); margin-bottom: 8px; }
+    .section-label-sub { font-size: 11px; letter-spacing: 2px; color: var(--muted); margin-bottom: 20px; font-style: italic; }
+    .section-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(48px, 6vw, 90px); line-height: 0.95; margin-bottom: 80px; }
+
+    .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
+    .feature-card { background: var(--surface); padding: 48px 40px; border: 1px solid var(--border); transition: border-color .3s, transform .3s; position: relative; overflow: hidden; }
+    .feature-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--accent1); transform: scaleX(0); transform-origin: left; transition: transform .4s ease; }
+    .feature-card:hover::before { transform: scaleX(1); }
+    .feature-card:hover { border-color: rgba(232,255,71,0.2); transform: translateY(-4px); }
+    .feature-num { font-family: 'Bebas Neue', sans-serif; font-size: 60px; color: var(--border); line-height: 1; margin-bottom: 20px; }
+    .feature-icon { font-size: 32px; margin-bottom: 16px; }
+    .feature-title { font-size: 20px; font-weight: 500; margin-bottom: 4px; }
+    .feature-title-en { font-size: 12px; color: var(--muted); letter-spacing: 1px; margin-bottom: 12px; font-style: italic; }
+    .feature-desc { font-size: 15px; color: var(--muted); line-height: 1.7; }
+
+    /* FORUM PREVIEW */
+    .forum-section { padding: 0 60px 140px; }
+    .forum-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; margin-top: 0; }
+    .forum-card { background: var(--surface); border: 1px solid var(--border); padding: 32px; transition: border-color .3s, transform .3s; cursor: pointer; }
+    .forum-card:hover { border-color: rgba(71,194,255,0.3); transform: translateY(-3px); }
+    .forum-card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .forum-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 500; flex-shrink: 0; }
+    .forum-meta { flex: 1; }
+    .forum-user { font-size: 13px; font-weight: 500; }
+    .forum-time { font-size: 11px; color: var(--muted); }
+    .forum-badge { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; padding: 3px 8px; border-radius: 2px; }
+    .badge-ai { background: rgba(232,255,71,0.1); color: var(--accent1); border: 1px solid rgba(232,255,71,0.2); }
+    .badge-forum { background: rgba(71,194,255,0.1); color: var(--accent3); border: 1px solid rgba(71,194,255,0.2); }
+    .badge-hot { background: rgba(255,77,109,0.1); color: var(--accent2); border: 1px solid rgba(255,77,109,0.2); }
+    .forum-title { font-size: 16px; font-weight: 500; margin-bottom: 8px; line-height: 1.4; }
+    .forum-preview { font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 16px; }
+    .forum-footer { display: flex; gap: 20px; }
+    .forum-stat { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+
+    /* AI PROJECTS */
+    .projects-section { padding: 0 60px 140px; background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .projects-inner { padding: 140px 0; }
+    .projects-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
+    .project-card { background: var(--bg); border: 1px solid var(--border); padding: 36px; transition: all .3s; position: relative; overflow: hidden; }
+    .project-card::after { content: ''; position: absolute; inset: 0; opacity: 0; transition: opacity .3s; }
+    .project-card.yellow::after { background: radial-gradient(ellipse at top left, rgba(232,255,71,0.05), transparent 60%); }
+    .project-card.red::after { background: radial-gradient(ellipse at top left, rgba(255,77,109,0.05), transparent 60%); }
+    .project-card.blue::after { background: radial-gradient(ellipse at top left, rgba(71,194,255,0.05), transparent 60%); }
+    .project-card:hover::after { opacity: 1; }
+    .project-card:hover { transform: translateY(-4px); }
+    .project-tag { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 20px; display: inline-block; padding: 4px 10px; border-radius: 2px; }
+    .tag-yellow { background: rgba(232,255,71,0.1); color: var(--accent1); }
+    .tag-red { background: rgba(255,77,109,0.1); color: var(--accent2); }
+    .tag-blue { background: rgba(71,194,255,0.1); color: var(--accent3); }
+    .project-title { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 2px; margin-bottom: 12px; }
+    .project-desc { font-size: 14px; color: var(--muted); line-height: 1.7; margin-bottom: 24px; }
+    .project-tools { display: flex; gap: 8px; flex-wrap: wrap; }
+    .project-tool { font-size: 11px; color: var(--muted); border: 1px solid var(--border); padding: 4px 10px; border-radius: 2px; }
+    .project-author { display: flex; align-items: center; gap: 10px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .project-author-avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+    .project-author-name { font-size: 12px; color: var(--muted); }
+
+    /* PRICING */
+    .pricing { padding: 140px 60px; }
+    .pricing-header { text-align: center; margin-bottom: 80px; }
+    .pricing-header .section-title { margin-bottom: 12px; }
+    .pricing-header p { color: var(--muted); font-size: 16px; }
+    .pricing-header .trial-big { font-size: 14px; color: var(--accent1); margin-top: 8px; letter-spacing: 1px; }
+
+    .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; max-width: 1000px; margin: 0 auto; }
+    .pricing-card { background: var(--surface); border: 1px solid var(--border); padding: 48px 36px; position: relative; transition: transform .3s; }
+    .pricing-card:hover { transform: translateY(-8px); }
+    .pricing-card.featured { background: var(--accent1); color: #000; border-color: var(--accent1); }
+    .pricing-card.featured .plan-name,
+    .pricing-card.featured .plan-price,
+    .pricing-card.featured .plan-desc { color: #000; }
+    .pricing-card.featured .plan-feature { color: rgba(0,0,0,0.65); }
+    .pricing-card.featured .plan-feature::before { border-color: #000; color: #000; background: rgba(0,0,0,0.08); }
+    .badge-pop { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); background: var(--accent2); color: #fff; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; padding: 6px 16px; border-radius: 20px; white-space: nowrap; }
+
+    .plan-name { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 24px; }
+    .plan-price { font-family: 'Bebas Neue', sans-serif; font-size: 72px; line-height: 1; margin-bottom: 4px; }
+    .plan-price sup { font-size: 28px; vertical-align: top; margin-top: 16px; font-family: 'DM Sans', sans-serif; font-weight: 300; }
+    .plan-price span { font-size: 18px; font-family: 'DM Sans', sans-serif; font-weight: 300; }
+    .plan-trial { font-size: 11px; letter-spacing: 1px; color: var(--accent1); text-transform: uppercase; margin-bottom: 8px; }
+    .pricing-card.featured .plan-trial { color: #000; }
+    .plan-desc { font-size: 13px; color: var(--muted); margin-bottom: 32px; }
+    .plan-features { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 36px; }
+    .plan-feature { font-size: 14px; color: var(--muted); display: flex; align-items: center; gap: 10px; }
+    .plan-feature::before { content: '✓'; width: 18px; height: 18px; border: 1px solid var(--accent1); border-radius: 2px; color: var(--accent1); font-size: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .plan-btn { display: block; text-align: center; padding: 14px; border: 1px solid currentColor; font-size: 13px; letter-spacing: 1px; text-transform: uppercase; text-decoration: none; color: inherit; transition: all .3s; }
+    .pricing-card:not(.featured) .plan-btn { color: var(--text); }
+    .pricing-card:not(.featured) .plan-btn:hover { background: var(--accent1); color: #000; border-color: var(--accent1); }
+    .pricing-card.featured .plan-btn { background: #000; color: var(--accent1); border-color: #000; }
+
+    /* CONTACT / FOOTER */
+    .contact-section { padding: 140px 60px; background: var(--surface); border-top: 1px solid var(--border); }
+    .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: start; }
+    .contact-content h2 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(48px, 6vw, 80px); line-height: 0.95; margin-bottom: 24px; }
+    .contact-content p { color: var(--muted); font-size: 16px; line-height: 1.8; margin-bottom: 40px; }
+    .contact-links { display: flex; flex-direction: column; gap: 16px; }
+    .contact-link { display: flex; align-items: center; gap: 16px; color: var(--text); text-decoration: none; font-size: 15px; transition: color .3s; }
+    .contact-link:hover { color: var(--accent1); }
+    .contact-link-icon { width: 44px; height: 44px; border: 1px solid var(--border); border-radius: 2px; display: flex; align-items: center; justify-content: center; font-size: 18px; transition: border-color .3s, background .3s; }
+    .contact-link:hover .contact-link-icon { border-color: var(--accent1); background: rgba(232,255,71,0.05); }
+
+    .contact-form { display: flex; flex-direction: column; gap: 16px; }
+    .form-group { display: flex; flex-direction: column; gap: 8px; }
+    .form-label { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
+    .form-input { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 14px 18px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 300; outline: none; transition: border-color .3s; border-radius: 2px; }
+    .form-input:focus { border-color: var(--accent1); }
+    .form-input::placeholder { color: var(--muted); }
+    textarea.form-input { resize: vertical; min-height: 120px; }
+    .form-submit { background: var(--accent1); color: #000; border: none; padding: 16px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: transform .2s, box-shadow .2s; border-radius: 2px; }
+    .form-submit:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(232,255,71,0.25); }
+
+    /* CTA */
+    .cta-section { padding: 140px 60px; text-align: center; position: relative; overflow: hidden; }
+    .cta-section h2 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(60px, 10vw, 150px); line-height: 0.95; margin-bottom: 24px; }
+    .cta-section h2 .outline { -webkit-text-stroke: 1px rgba(240,237,230,0.2); color: transparent; }
+    .cta-section p { color: var(--muted); font-size: 17px; max-width: 420px; margin: 0 auto 16px; }
+    .cta-section .trial-note { margin-bottom: 40px; }
+
+    footer { padding: 40px 60px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+    .footer-logo { font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 4px; color: var(--accent1); }
+    footer p { color: var(--muted); font-size: 13px; }
+    .footer-links { display: flex; gap: 32px; }
+    .footer-links a { color: var(--muted); text-decoration: none; font-size: 13px; transition: color .3s; }
+    .footer-links a:hover { color: var(--text); }
+
+    /* REVEAL */
+    .reveal { opacity: 0; transform: translateY(40px); transition: opacity .8s ease, transform .8s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    @media (max-width: 900px) {
+      nav { padding: 20px 24px; }
+      nav.scrolled { padding: 14px 24px; }
+      .nav-links { display: none; }
+      .hero, .features, .forum-section, .projects-section .projects-inner, .pricing, .contact-section, .cta-section { padding-left: 24px; padding-right: 24px; }
+      .features-grid, .forum-grid, .projects-grid, .pricing-grid, .contact-grid { grid-template-columns: 1fr; }
+      .hero-stats { gap: 30px; }
+      footer { padding: 30px 24px; flex-direction: column; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <!-- NAV -->
+  <nav id="nav">
+    <a href="#" class="logo">NEXTNOVA</a>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#forum">Community</a></li>
+      <li><a href="#projekte">KI Projekte</a></li>
+      <li><a href="#preise">Preise</a></li>
+      <li><a href="#kontakt">Kontakt</a></li>
+    </ul>
+    <div class="nav-right">
+      <button class="nav-lang" onclick="toggleLang()">EN / DE</button>
+      <a href="auth.html" class="nav-cta" data-de="Kostenlos testen" data-en="Try for free">Kostenlos testen</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="blob blob1"></div>
+    <div class="blob blob2"></div>
+    <div class="blob blob3"></div>
+    <div class="hero-tag">
+      <span data-de="Neu — Die Zukunft beginnt hier" data-en="New — The future starts here">Neu — Die Zukunft beginnt hier</span>
+    </div>
+    <h1>
+      NEXT<span class="accent1">-</span><br>
+      <span class="outline">NOVA</span><br>
+      <span class="accent3">COM</span>MUNITY
+    </h1>
+    <p class="hero-desc" data-de="Wo KI-Enthusiasten aufeinandertreffen. Lerne, baue und verdiene — mit der Community die wirklich liefert." data-en="Where AI enthusiasts meet. Learn, build and earn — with a community that actually delivers.">
+      Wo KI-Enthusiasten aufeinandertreffen. Lerne, baue und verdiene — mit der Community die wirklich liefert.
+    </p>
+    <p class="hero-desc-en" data-de="Where AI meets community — learn, build, earn." data-en="Wo KI auf Community trifft — lernen, bauen, verdienen.">
+      Where AI meets community — learn, build, earn.
+    </p>
+    <div class="hero-actions">
+      <a href="auth.html" class="btn-primary" data-de="5 Tage kostenlos starten" data-en="Start free for 5 days">5 Tage kostenlos starten</a>
+      <a href="#forum" class="btn-ghost" data-de="Community entdecken →" data-en="Explore community →">Community entdecken →</a>
+    </div>
+    <p class="trial-note" data-de="✦ <em>5 Tage gratis</em> — Keine Kreditkarte nötig" data-en="✦ <em>5 days free</em> — No credit card required">✦ <em>5 Tage gratis</em> — Keine Kreditkarte nötig</p>
+    <div class="hero-stats">
+      <div>
+        <div class="stat-num">10<em>K+</em></div>
+        <div class="stat-label" data-de="Mitglieder" data-en="Members">Mitglieder</div>
+      </div>
+      <div>
+        <div class="stat-num">500<em>+</em></div>
+        <div class="stat-label" data-de="KI Projekte" data-en="AI Projects">KI Projekte</div>
+      </div>
+      <div>
+        <div class="stat-num">98<em>%</em></div>
+        <div class="stat-label" data-de="Zufriedenheit" data-en="Satisfaction">Zufriedenheit</div>
+      </div>
+      <div>
+        <div class="stat-num">€<em>0</em></div>
+        <div class="stat-label" data-de="Zum Starten" data-en="To get started">Zum Starten</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MARQUEE -->
+  <div class="marquee-section">
+    <div class="marquee-track">
+      <div class="marquee-item">NEXTNOVA <span class="marquee-dot"></span></div>
+      <div class="marquee-item">KI COMMUNITY <span class="marquee-dot"></span></div>
+      <div class="marquee-item">AI PROJECTS <span class="marquee-dot"></span></div>
+      <div class="marquee-item">FORUM <span class="marquee-dot"></span></div>
+      <div class="marquee-item">FLOWISE <span class="marquee-dot"></span></div>
+      <div class="marquee-item">LEARN & EARN <span class="marquee-dot"></span></div>
+      <div class="marquee-item">NEXTNOVA <span class="marquee-dot"></span></div>
+      <div class="marquee-item">KI COMMUNITY <span class="marquee-dot"></span></div>
+      <div class="marquee-item">AI PROJECTS <span class="marquee-dot"></span></div>
+      <div class="marquee-item">FORUM <span class="marquee-dot"></span></div>
+      <div class="marquee-item">FLOWISE <span class="marquee-dot"></span></div>
+      <div class="marquee-item">LEARN & EARN <span class="marquee-dot"></span></div>
+      <div class="marquee-item">NEXTNOVA <span class="marquee-dot"></span></div>
+      <div class="marquee-item">KI COMMUNITY <span class="marquee-dot"></span></div>
+      <div class="marquee-item">AI PROJECTS <span class="marquee-dot"></span></div>
+      <div class="marquee-item">FORUM <span class="marquee-dot"></span></div>
+      <div class="marquee-item">FLOWISE <span class="marquee-dot"></span></div>
+      <div class="marquee-item">LEARN & EARN <span class="marquee-dot"></span></div>
+    </div>
+  </div>
+
+  <!-- FEATURES -->
+  <section class="features" id="features">
+    <div class="reveal">
+      <div class="section-label" data-de="Was wir bieten" data-en="What we offer">Was wir bieten</div>
+      <div class="section-label-sub" data-de="What we offer" data-en="Was wir bieten">What we offer</div>
+      <h2 class="section-title" data-de="ALLES IN EINER PLATTFORM" data-en="EVERYTHING IN ONE PLATFORM">ALLES IN EINER<br>PLATTFORM</h2>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card reveal">
+        <div class="feature-num">01</div>
+        <div class="feature-icon">🤖</div>
+        <div class="feature-title" data-de="KI Projekte" data-en="AI Projects">KI Projekte</div>
+        <div class="feature-title-en" data-de="AI Projects" data-en="KI Projekte">AI Projects</div>
+        <p class="feature-desc" data-de="Baue eigene KI-Agenten mit Flowise, teile sie mit der Community und lerne von den Besten." data-en="Build your own AI agents with Flowise, share them with the community and learn from the best.">Baue eigene KI-Agenten mit Flowise, teile sie mit der Community und lerne von den Besten.</p>
+      </div>
+      <div class="feature-card reveal" style="transition-delay:.1s">
+        <div class="feature-num">02</div>
+        <div class="feature-icon">💬</div>
+        <div class="feature-title" data-de="Aktives Forum" data-en="Active Forum">Aktives Forum</div>
+        <div class="feature-title-en" data-de="Active Forum" data-en="Aktives Forum">Active Forum</div>
+        <p class="feature-desc" data-de="Diskutiere, stelle Fragen und hilf anderen. Eine echte Community die sich gegenseitig nach oben bringt." data-en="Discuss, ask questions and help others. A real community that lifts each other up.">Diskutiere, stelle Fragen und hilf anderen. Eine echte Community die sich gegenseitig nach oben bringt.</p>
+      </div>
+      <div class="feature-card reveal" style="transition-delay:.2s">
+        <div class="feature-num">03</div>
+        <div class="feature-icon">📚</div>
+        <div class="feature-title" data-de="Tutorials & Kurse" data-en="Tutorials & Courses">Tutorials & Kurse</div>
+        <div class="feature-title-en" data-de="Tutorials & Courses" data-en="Tutorials & Kurse">Tutorials & Courses</div>
+        <p class="feature-desc" data-de="Von Flowise bis Monetarisierung — schritt-für-schritt Anleitungen von echten Praktikern." data-en="From Flowise to monetization — step-by-step guides from real practitioners.">Von Flowise bis Monetarisierung — schritt-für-schritt Anleitungen von echten Praktikern.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-num">04</div>
+        <div class="feature-icon">💰</div>
+        <div class="feature-title" data-de="Verdiene mit KI" data-en="Earn with AI">Verdiene mit KI</div>
+        <div class="feature-title-en" data-de="Earn with AI" data-en="Verdiene mit KI">Earn with AI</div>
+        <p class="feature-desc" data-de="Lerne wie du mit KI-Projekten echtes Geld verdienst — Strategien die wirklich funktionieren." data-en="Learn how to earn real money with AI projects — strategies that actually work.">Lerne wie du mit KI-Projekten echtes Geld verdienst — Strategien die wirklich funktionieren.</p>
+      </div>
+      <div class="feature-card reveal" style="transition-delay:.1s">
+        <div class="feature-num">05</div>
+        <div class="feature-icon">🔗</div>
+        <div class="feature-title" data-de="Networking" data-en="Networking">Networking</div>
+        <div class="feature-title-en" data-de="Networking" data-en="Networking">Networking</div>
+        <p class="feature-desc" data-de="Verbinde dich mit Gleichgesinnten, finde Partner für Projekte und knüpfe wertvolle Kontakte." data-en="Connect with like-minded people, find project partners and make valuable contacts.">Verbinde dich mit Gleichgesinnten, finde Partner für Projekte und knüpfe wertvolle Kontakte.</p>
+      </div>
+      <div class="feature-card reveal" style="transition-delay:.2s">
+        <div class="feature-num">06</div>
+        <div class="feature-icon">🏆</div>
+        <div class="feature-title" data-de="Challenges & Rewards" data-en="Challenges & Rewards">Challenges & Rewards</div>
+        <div class="feature-title-en" data-de="Challenges & Rewards" data-en="Challenges & Rewards">Challenges & Rewards</div>
+        <p class="feature-desc" data-de="Nimm an monatlichen KI-Challenges teil, zeige dein Können und gewinne exklusive Preise." data-en="Participate in monthly AI challenges, showcase your skills and win exclusive prizes.">Nimm an monatlichen KI-Challenges teil, zeige dein Können und gewinne exklusive Preise.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FORUM PREVIEW -->
+  <section class="forum-section" id="forum">
+    <div class="reveal">
+      <div class="section-label" data-de="Community" data-en="Community">Community</div>
+      <div class="section-label-sub">Forum Preview</div>
+      <h2 class="section-title" data-de="ECHTE MENSCHEN.<br>ECHTES WISSEN." data-en="REAL PEOPLE.<br>REAL KNOWLEDGE.">ECHTE MENSCHEN.<br>ECHTES WISSEN.</h2>
+    </div>
+    <div class="forum-grid">
+      <div class="forum-card reveal">
+        <div class="forum-card-header">
+          <div class="forum-avatar" style="background:rgba(232,255,71,0.15);color:var(--accent1)">MK</div>
+          <div class="forum-meta">
+            <div class="forum-user">MaxKI_Dev</div>
+            <div class="forum-time">vor 2 Stunden</div>
+          </div>
+          <span class="forum-badge badge-ai">KI Projekt</span>
+        </div>
+        <div class="forum-title">Ich habe einen Flowise-Agenten gebaut der €500/Monat passiv verdient</div>
+        <p class="forum-preview">Hier ist mein komplettes Setup — Flowise + Landing Page + automatischer Lead-Funnel. Alles open source für die Community...</p>
+        <div class="forum-footer">
+          <span class="forum-stat">💬 47 Antworten</span>
+          <span class="forum-stat">❤️ 183 Likes</span>
+          <span class="forum-stat">🔥 Trending</span>
+        </div>
+      </div>
+      <div class="forum-card reveal" style="transition-delay:.1s">
+        <div class="forum-card-header">
+          <div class="forum-avatar" style="background:rgba(71,194,255,0.15);color:var(--accent3)">SA</div>
+          <div class="forum-meta">
+            <div class="forum-user">SaraAI</div>
+            <div class="forum-time">vor 5 Stunden</div>
+          </div>
+          <span class="forum-badge badge-forum">Diskussion</span>
+        </div>
+        <div class="forum-title">Welches LLM ist 2025 am besten für Kundenservice-Agenten?</div>
+        <p class="forum-preview">Ich habe GPT-4o, Claude und Gemini verglichen. Die Ergebnisse haben mich überrascht — besonders bei deutschen Texten...</p>
+        <div class="forum-footer">
+          <span class="forum-stat">💬 31 Antworten</span>
+          <span class="forum-stat">❤️ 94 Likes</span>
+        </div>
+      </div>
+      <div class="forum-card reveal">
+        <div class="forum-card-header">
+          <div class="forum-avatar" style="background:rgba(255,77,109,0.15);color:var(--accent2)">TN</div>
+          <div class="forum-meta">
+            <div class="forum-user">TechNovaMike</div>
+            <div class="forum-time">vor 1 Tag</div>
+          </div>
+          <span class="forum-badge badge-hot">🔥 Hot</span>
+        </div>
+        <div class="forum-title">Tutorial: Von 0 zur ersten KI-Agentur in 30 Tagen</div>
+        <p class="forum-preview">Schritt für Schritt wie ich meine erste KI-Agentur aufgebaut habe. Tools, Preise, erste Kunden — alles transparent...</p>
+        <div class="forum-footer">
+          <span class="forum-stat">💬 89 Antworten</span>
+          <span class="forum-stat">❤️ 412 Likes</span>
+          <span class="forum-stat">📌 Pinned</span>
+        </div>
+      </div>
+      <div class="forum-card reveal" style="transition-delay:.1s">
+        <div class="forum-card-header">
+          <div class="forum-avatar" style="background:rgba(232,255,71,0.15);color:var(--accent1)">LP</div>
+          <div class="forum-meta">
+            <div class="forum-user">LauraPrompt</div>
+            <div class="forum-time">vor 2 Tagen</div>
+          </div>
+          <span class="forum-badge badge-ai">KI Projekt</span>
+        </div>
+        <div class="forum-title">Mein Prompt-System für professionelle Flowise Chatbots</div>
+        <p class="forum-preview">Nach 6 Monaten Experimenten habe ich das perfekte System-Prompt Template entwickelt. Teile es hier kostenlos...</p>
+        <div class="forum-footer">
+          <span class="forum-stat">💬 56 Antworten</span>
+          <span class="forum-stat">❤️ 267 Likes</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AI PROJECTS -->
+  <section class="projects-section" id="projekte">
+    <div class="projects-inner">
+      <div class="reveal">
+        <div class="section-label" data-de="KI Projekte" data-en="AI Projects">KI Projekte</div>
+        <div class="section-label-sub">Built by the community</div>
+        <h2 class="section-title" data-de="VON DER COMMUNITY.<br>FÜR DIE COMMUNITY." data-en="BY THE COMMUNITY.<br>FOR THE COMMUNITY.">VON DER COMMUNITY.<br>FÜR DIE COMMUNITY.</h2>
+      </div>
+      <div class="projects-grid">
+        <div class="project-card yellow reveal">
+          <span class="project-tag tag-yellow">Flowise Agent</span>
+          <div class="project-title">SALES-BOT PRO</div>
+          <p class="project-desc">KI-Verkaufsassistent der Besucher qualifiziert, Fragen beantwortet und Leads automatisch in CRM einträgt.</p>
+          <div class="project-tools">
+            <span class="project-tool">Flowise</span>
+            <span class="project-tool">OpenAI</span>
+            <span class="project-tool">HubSpot</span>
+          </div>
+          <div class="project-author">
+            <div class="project-author-avatar" style="background:rgba(232,255,71,0.15);color:var(--accent1)">MK</div>
+            <span class="project-author-name">von MaxKI_Dev • 1.2k Downloads</span>
+          </div>
+        </div>
+        <div class="project-card red reveal" style="transition-delay:.1s">
+          <span class="project-tag tag-red">Landing Page + KI</span>
+          <div class="project-title">CONVERTO SUITE</div>
+          <p class="project-desc">Komplettes Paket: Landing Page Template + integrierter Chatbot + Analytics Dashboard. Sofort einsetzbar.</p>
+          <div class="project-tools">
+            <span class="project-tool">HTML/CSS</span>
+            <span class="project-tool">Flowise</span>
+            <span class="project-tool">Netlify</span>
+          </div>
+          <div class="project-author">
+            <div class="project-author-avatar" style="background:rgba(255,77,109,0.15);color:var(--accent2)">TN</div>
+            <span class="project-author-name">von TechNovaMike • 890 Downloads</span>
+          </div>
+        </div>
+        <div class="project-card blue reveal" style="transition-delay:.2s">
+          <span class="project-tag tag-blue">Automation</span>
+          <div class="project-title">CONTENT AI</div>
+          <p class="project-desc">Automatischer Content-Generator der täglich Social Media Posts, Blog-Artikel und Newsletter erstellt.</p>
+          <div class="project-tools">
+            <span class="project-tool">Flowise</span>
+            <span class="project-tool">Claude</span>
+            <span class="project-tool">Make.com</span>
+          </div>
+          <div class="project-author">
+            <div class="project-author-avatar" style="background:rgba(71,194,255,0.15);color:var(--accent3)">SA</div>
+            <span class="project-author-name">von SaraAI • 654 Downloads</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRICING -->
+  <section class="pricing" id="preise">
+    <div class="pricing-header reveal">
+      <div class="section-label" data-de="Membership" data-en="Membership">Membership</div>
+      <h2 class="section-title" data-de="EINFACH.<br>FAIR.<br>TRANSPARENT." data-en="SIMPLE.<br>FAIR.<br>TRANSPARENT.">EINFACH.<br>FAIR.<br>TRANSPARENT.</h2>
+      <p data-de="Keine versteckten Kosten. Kündige jederzeit." data-en="No hidden costs. Cancel anytime.">Keine versteckten Kosten. Kündige jederzeit.</p>
+      <p class="trial-big" data-de="✦ Alle Pläne starten mit 5 Tagen kostenlos ✦" data-en="✦ All plans start with 5 days free ✦">✦ Alle Pläne starten mit 5 Tagen kostenlos ✦</p>
+    </div>
+    <div class="pricing-grid">
+      <div class="pricing-card reveal">
+        <div class="plan-name" data-de="Starter" data-en="Starter">Starter</div>
+        <div class="plan-price"><sup>€</sup>9<span>/mo</span></div>
+        <div class="plan-trial" data-de="✦ 5 Tage gratis" data-en="✦ 5 days free">✦ 5 Tage gratis</div>
+        <p class="plan-desc" data-de="Perfekt zum Einsteigen" data-en="Perfect for getting started">Perfekt zum Einsteigen</p>
+        <ul class="plan-features">
+          <li class="plan-feature" data-de="Forum Zugang" data-en="Forum access">Forum Zugang</li>
+          <li class="plan-feature" data-de="5 KI Projekte" data-en="5 AI projects">5 KI Projekte</li>
+          <li class="plan-feature" data-de="Basis Tutorials" data-en="Basic tutorials">Basis Tutorials</li>
+          <li class="plan-feature" data-de="Community Chat" data-en="Community chat">Community Chat</li>
+        </ul>
+        <a href="auth.html" class="plan-btn" data-de="Kostenlos starten" data-en="Start for free">Kostenlos starten</a>
+      </div>
+      <div class="pricing-card featured reveal" style="transition-delay:.1s">
+        <div class="badge-pop" data-de="Beliebteste Wahl" data-en="Most popular">Beliebteste Wahl</div>
+        <div class="plan-name" data-de="Pro Member" data-en="Pro Member">Pro Member</div>
+        <div class="plan-price"><sup>€</sup>29<span>/mo</span></div>
+        <div class="plan-trial">✦ 5 Tage gratis</div>
+        <p class="plan-desc" data-de="Für ernsthafte KI-Builder" data-en="For serious AI builders">Für ernsthafte KI-Builder</p>
+        <ul class="plan-features">
+          <li class="plan-feature" data-de="Alles in Starter" data-en="Everything in Starter">Alles in Starter</li>
+          <li class="plan-feature" data-de="Unbegrenzte Projekte" data-en="Unlimited projects">Unbegrenzte Projekte</li>
+          <li class="plan-feature" data-de="Alle Tutorials & Kurse" data-en="All tutorials & courses">Alle Tutorials & Kurse</li>
+          <li class="plan-feature" data-de="Monetarisierungs-Guides" data-en="Monetization guides">Monetarisierungs-Guides</li>
+          <li class="plan-feature" data-de="Monthly Challenges" data-en="Monthly challenges">Monthly Challenges</li>
+          <li class="plan-feature" data-de="Priority Support" data-en="Priority support">Priority Support</li>
+        </ul>
+        <a href="auth.html" class="plan-btn" data-de="Pro werden" data-en="Go Pro">Pro werden</a>
+      </div>
+      <div class="pricing-card reveal" style="transition-delay:.2s">
+        <div class="plan-name" data-de="Elite" data-en="Elite">Elite</div>
+        <div class="plan-price"><sup>€</sup>79<span>/mo</span></div>
+        <div class="plan-trial" data-de="✦ 5 Tage gratis" data-en="✦ 5 days free">✦ 5 Tage gratis</div>
+        <p class="plan-desc" data-de="Für die Besten der Besten" data-en="For the best of the best">Für die Besten der Besten</p>
+        <ul class="plan-features">
+          <li class="plan-feature" data-de="Alles in Pro" data-en="Everything in Pro">Alles in Pro</li>
+          <li class="plan-feature" data-de="1:1 Mentoring" data-en="1:1 mentoring">1:1 Mentoring</li>
+          <li class="plan-feature" data-de="Exklusive Mastermind-Calls" data-en="Exclusive mastermind calls">Exklusive Mastermind-Calls</li>
+          <li class="plan-feature" data-de="Early Access zu Tools" data-en="Early access to tools">Early Access zu Tools</li>
+          <li class="plan-feature" data-de="Elite Badge & Status" data-en="Elite badge & status">Elite Badge & Status</li>
+        </ul>
+        <a href="auth.html" class="plan-btn" data-de="Elite werden" data-en="Go Elite">Elite werden</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section">
+    <div class="blob blob1" style="opacity:.06"></div>
+    <div class="blob blob2" style="opacity:.06"></div>
+    <h2 class="reveal">BEREIT FÜR<br><span class="outline">NEXT</span><br><span class="accent3">NOVA?</span></h2>
+    <p class="reveal" style="transition-delay:.2s" data-de="Schließe dich tausenden KI-Enthusiasten an die bereits mit Nextnova wachsen." data-en="Join thousands of AI enthusiasts already growing with Nextnova.">Schließe dich tausenden KI-Enthusiasten an die bereits mit Nextnova wachsen.</p>
+    <p class="trial-note reveal" style="transition-delay:.25s" data-de="✦ <em>5 Tage komplett gratis</em> — danach ab €9/Monat" data-en="✦ <em>5 days completely free</em> — then from €9/month">✦ <em>5 Tage komplett gratis</em> — danach ab €9/Monat</p>
+    <div class="reveal" style="transition-delay:.3s">
+      <a href="auth.html" class="btn-primary" style="font-size:16px;padding:22px 56px;" data-de="Jetzt kostenlos starten →" data-en="Start for free now →">Jetzt kostenlos starten →</a>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section class="contact-section" id="kontakt">
+    <div class="contact-grid">
+      <div class="contact-content reveal">
+        <div class="section-label" data-de="Kontakt" data-en="Contact">Kontakt</div>
+        <h2 data-de="LASS UNS REDEN." data-en="LET'S TALK.">LASS UNS REDEN.</h2>
+        <p data-de="Du hast Fragen zu Nextnova, Partnerschaftsanfragen oder möchtest einfach Teil der Community werden? Wir sind für dich da." data-en="You have questions about Nextnova, partnership requests, or just want to become part of the community? We're here for you.">Du hast Fragen zu Nextnova, Partnerschaftsanfragen oder möchtest einfach Teil der Community werden? Wir sind für dich da.</p>
+        <div class="contact-links">
+          <a href="mailto:hello@nextnova.io" class="contact-link">
+            <div class="contact-link-icon">✉️</div>
+            hello@nextnova.io
+          </a>
+          <a href="#" class="contact-link">
+            <div class="contact-link-icon">💬</div>
+            Discord Community
+          </a>
+          <a href="#" class="contact-link">
+            <div class="contact-link-icon">🐦</div>
+            @nextnova_io
+          </a>
+        </div>
+      </div>
+      <div class="contact-form reveal" style="transition-delay:.2s">
+        <div class="form-group">
+          <label class="form-label" data-de="Dein Name" data-en="Your name">Dein Name</label>
+          <input type="text" class="form-input" placeholder="Max Mustermann" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-de="E-Mail" data-en="Email">E-Mail</label>
+          <input type="email" class="form-input" placeholder="max@beispiel.de" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-de="Nachricht" data-en="Message">Nachricht</label>
+          <textarea class="form-input" placeholder="Schreib uns..."></textarea>
+        </div>
+        <button class="form-submit" data-de="Nachricht senden →" data-en="Send message →">Nachricht senden →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-logo">NEXTNOVA</div>
+    <p>© 2026 Nextnova. All rights reserved.</p>
+    <div class="footer-links">
+      <a href="#" data-de="Datenschutz" data-en="Privacy">Datenschutz</a>
+      <a href="#" data-de="Impressum" data-en="Imprint">Impressum</a>
+      <a href="#" data-de="AGB" data-en="Terms">AGB</a>
+      <a href="#kontakt" data-de="Kontakt" data-en="Contact">Kontakt</a>
+    </div>
+  </footer>
+
+  <script>
+    // Cursor
+    const cursor = document.getElementById('cursor');
+    const ring = document.getElementById('cursorRing');
+    let mx=0,my=0,rx=0,ry=0;
+    document.addEventListener('mousemove', e => { mx=e.clientX; my=e.clientY; });
+    function animateCursor() {
+      cursor.style.left=mx+'px'; cursor.style.top=my+'px';
+      rx+=(mx-rx)*.12; ry+=(my-ry)*.12;
+      ring.style.left=rx+'px'; ring.style.top=ry+'px';
+      requestAnimationFrame(animateCursor);
+    }
+    animateCursor();
+    document.querySelectorAll('a,button').forEach(el => {
+      el.addEventListener('mouseenter',()=>{ cursor.style.width='20px'; cursor.style.height='20px'; });
+      el.addEventListener('mouseleave',()=>{ cursor.style.width='12px'; cursor.style.height='12px'; });
+    });
+
+    // Nav scroll
+    window.addEventListener('scroll', () => {
+      document.getElementById('nav').classList.toggle('scrolled', window.scrollY > 60);
+    });
+
+    // Scroll reveal
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // Language toggle
+    let lang = 'de';
+    function toggleLang() {
+      lang = lang === 'de' ? 'en' : 'de';
+      document.querySelectorAll('[data-de]').forEach(el => {
+        const text = el.getAttribute('data-' + lang);
+        if (text) el.innerHTML = text;
+      });
+    }
+
+    // Form submit
+    document.querySelector('.form-submit').addEventListener('click', function() {
+      this.textContent = lang === 'de' ? '✓ Gesendet!' : '✓ Sent!';
+      this.style.background = '#47c2ff';
+      setTimeout(() => {
+        this.textContent = lang === 'de' ? 'Nachricht senden →' : 'Send message →';
+        this.style.background = 'var(--accent1)';
+      }, 3000);
+    });
+  </script>
+
+<script type="module">
+    import Chatbot from "https://cdn.jsdelivr.net/npm/flowise-embed/dist/web.js"
+    Chatbot.init({
+        chatflowid: "f2bc8f75-692e-4c98-89dd-e85e3114ae2b",
+        apiHost: "https://cloud.flowiseai.com",
+    })
+</script>
+</body>
+</html>

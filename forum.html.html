@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NEXTNOVA — Forum</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #060608;
+      --surface: #0e0e14;
+      --accent1: #e8ff47;
+      --accent2: #ff4d6d;
+      --accent3: #47c2ff;
+      --text: #f0ede6;
+      --muted: #6b6870;
+      --border: rgba(255,255,255,0.07);
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-weight: 300; min-height: 100vh; cursor: none; }
+
+    /* CURSOR */
+    .cursor { position: fixed; width: 12px; height: 12px; background: var(--accent1); border-radius: 50%; pointer-events: none; z-index: 9999; transform: translate(-50%,-50%); transition: width .3s, height .3s; mix-blend-mode: difference; }
+    .cursor-ring { position: fixed; width: 40px; height: 40px; border: 1px solid rgba(232,255,71,0.4); border-radius: 50%; pointer-events: none; z-index: 9998; transform: translate(-50%,-50%); transition: transform .15s ease-out; }
+
+    /* NAV */
+    nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 20px 48px; background: rgba(6,6,8,0.92); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); }
+    .logo { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 4px; color: var(--accent1); text-decoration: none; }
+    .nav-links { display: flex; gap: 32px; list-style: none; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: 13px; letter-spacing: 1px; text-transform: uppercase; transition: color .3s; }
+    .nav-links a:hover, .nav-links a.active { color: var(--text); }
+    .nav-user { display: flex; align-items: center; gap: 16px; }
+    .nav-username { font-size: 13px; color: var(--muted); }
+    .nav-logout { background: none; border: 1px solid var(--border); color: var(--muted); padding: 8px 16px; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all .3s; border-radius: 2px; }
+    .nav-logout:hover { border-color: var(--accent2); color: var(--accent2); }
+
+    /* LAYOUT */
+    .container { max-width: 1100px; margin: 0 auto; padding: 100px 24px 60px; }
+    .layout { display: grid; grid-template-columns: 1fr 320px; gap: 32px; align-items: start; }
+
+    /* HEADER */
+    .forum-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
+    .forum-header h1 { font-family: 'Bebas Neue', sans-serif; font-size: 48px; line-height: 1; }
+    .forum-header h1 span { color: var(--accent1); }
+    .new-post-btn { background: var(--accent1); color: #000; border: none; padding: 12px 24px; font-size: 13px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; font-family: 'DM Sans', sans-serif; border-radius: 2px; transition: transform .2s, box-shadow .2s; }
+    .new-post-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(232,255,71,0.25); }
+
+    /* CATEGORIES */
+    .categories { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+    .cat-btn { background: none; border: 1px solid var(--border); color: var(--muted); padding: 7px 16px; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; font-family: 'DM Sans', sans-serif; border-radius: 2px; transition: all .3s; }
+    .cat-btn:hover, .cat-btn.active { border-color: var(--accent1); color: var(--accent1); background: rgba(232,255,71,0.05); }
+
+    /* POSTS */
+    .posts-list { display: flex; flex-direction: column; gap: 2px; }
+    .post-card { background: var(--surface); border: 1px solid var(--border); padding: 24px 28px; transition: border-color .3s, transform .3s; cursor: pointer; }
+    .post-card:hover { border-color: rgba(232,255,71,0.2); transform: translateX(4px); }
+    .post-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 10px; }
+    .post-title { font-size: 17px; font-weight: 500; line-height: 1.4; flex: 1; }
+    .post-category { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; padding: 4px 10px; border-radius: 2px; flex-shrink: 0; }
+    .cat-ki { background: rgba(232,255,71,0.1); color: var(--accent1); border: 1px solid rgba(232,255,71,0.2); }
+    .cat-diskussion { background: rgba(71,194,255,0.1); color: var(--accent3); border: 1px solid rgba(71,194,255,0.2); }
+    .cat-tutorial { background: rgba(255,77,109,0.1); color: var(--accent2); border: 1px solid rgba(255,77,109,0.2); }
+    .cat-news { background: rgba(255,200,71,0.1); color: #ffc847; border: 1px solid rgba(255,200,71,0.2); }
+    .post-preview { font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 14px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .post-footer { display: flex; align-items: center; gap: 20px; }
+    .post-meta { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+    .post-avatar { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 500; background: rgba(232,255,71,0.15); color: var(--accent1); }
+    .like-btn { background: none; border: none; color: var(--muted); font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: color .3s; font-family: 'DM Sans', sans-serif; padding: 0; }
+    .like-btn:hover { color: var(--accent2); }
+    .like-btn.liked { color: var(--accent2); }
+
+    /* LOADING / EMPTY */
+    .loading { text-align: center; padding: 60px; color: var(--muted); font-size: 15px; }
+    .loading-spinner { width: 32px; height: 32px; border: 2px solid var(--border); border-top-color: var(--accent1); border-radius: 50%; animation: spin .7s linear infinite; margin: 0 auto 16px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .empty { text-align: center; padding: 60px; color: var(--muted); }
+    .empty-icon { font-size: 48px; margin-bottom: 16px; }
+    .empty h3 { font-family: 'Bebas Neue', sans-serif; font-size: 28px; margin-bottom: 8px; color: var(--text); }
+
+    /* SIDEBAR */
+    .sidebar { display: flex; flex-direction: column; gap: 16px; position: sticky; top: 100px; }
+    .sidebar-card { background: var(--surface); border: 1px solid var(--border); padding: 24px; border-radius: 2px; }
+    .sidebar-title { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+    .sidebar-stat { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+    .sidebar-stat:last-child { border-bottom: none; }
+    .sidebar-stat-num { font-family: 'Bebas Neue', sans-serif; font-size: 24px; color: var(--accent1); }
+    .rule-item { display: flex; gap: 10px; font-size: 13px; color: var(--muted); padding: 6px 0; line-height: 1.5; }
+    .rule-num { color: var(--accent1); font-weight: 500; flex-shrink: 0; }
+
+    /* MODAL — New Post */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 200; display: none; align-items: center; justify-content: center; padding: 24px; backdrop-filter: blur(4px); }
+    .modal-overlay.show { display: flex; }
+    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 24px 28px; border-bottom: 1px solid var(--border); }
+    .modal-header h2 { font-family: 'Bebas Neue', sans-serif; font-size: 28px; }
+    .modal-close { background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; transition: color .3s; }
+    .modal-close:hover { color: var(--text); }
+    .modal-body { padding: 28px; display: flex; flex-direction: column; gap: 16px; }
+    .form-group { display: flex; flex-direction: column; gap: 7px; }
+    .form-label { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
+    .form-input { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 12px 14px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 300; outline: none; transition: border-color .3s; border-radius: 2px; width: 100%; }
+    .form-input:focus { border-color: var(--accent1); }
+    .form-input::placeholder { color: var(--muted); }
+    textarea.form-input { resize: vertical; min-height: 140px; }
+    .form-select { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 12px 14px; font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none; transition: border-color .3s; border-radius: 2px; width: 100%; }
+    .form-select:focus { border-color: var(--accent1); }
+    .modal-footer { padding: 20px 28px; border-top: 1px solid var(--border); display: flex; gap: 12px; justify-content: flex-end; }
+    .btn-cancel { background: none; border: 1px solid var(--border); color: var(--muted); padding: 12px 24px; font-size: 13px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; font-family: 'DM Sans', sans-serif; border-radius: 2px; transition: all .3s; }
+    .btn-cancel:hover { border-color: var(--text); color: var(--text); }
+    .btn-submit { background: var(--accent1); color: #000; border: none; padding: 12px 28px; font-size: 13px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; font-family: 'DM Sans', sans-serif; border-radius: 2px; transition: transform .2s; }
+    .btn-submit:hover { transform: translateY(-2px); }
+    .btn-submit:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+    /* MODAL — Post Detail */
+    .detail-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 200; display: none; align-items: center; justify-content: center; padding: 24px; backdrop-filter: blur(4px); }
+    .detail-overlay.show { display: flex; }
+    .detail-modal { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; width: 100%; max-width: 700px; max-height: 90vh; overflow-y: auto; }
+    .detail-header { padding: 28px 32px 0; }
+    .detail-category { display: inline-block; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; padding: 4px 10px; border-radius: 2px; margin-bottom: 14px; }
+    .detail-title { font-size: 26px; font-weight: 500; line-height: 1.3; margin-bottom: 12px; }
+    .detail-meta { display: flex; gap: 16px; color: var(--muted); font-size: 13px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+    .detail-content { padding: 24px 32px; font-size: 15px; line-height: 1.8; color: var(--muted); white-space: pre-wrap; }
+    .detail-actions { padding: 16px 32px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); display: flex; gap: 16px; }
+    .detail-like-btn { background: none; border: 1px solid var(--border); color: var(--muted); padding: 8px 18px; font-size: 13px; cursor: pointer; font-family: 'DM Sans', sans-serif; border-radius: 2px; transition: all .3s; display: flex; align-items: center; gap: 6px; }
+    .detail-like-btn:hover, .detail-like-btn.liked { border-color: var(--accent2); color: var(--accent2); }
+    .detail-close-btn { background: none; border: 1px solid var(--border); color: var(--muted); padding: 8px 18px; font-size: 13px; cursor: pointer; font-family: 'DM Sans', sans-serif; border-radius: 2px; transition: all .3s; margin-left: auto; }
+    .detail-close-btn:hover { border-color: var(--text); color: var(--text); }
+
+    /* COMMENTS */
+    .comments-section { padding: 24px 32px; }
+    .comments-title { font-size: 13px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 20px; }
+    .comment-item { padding: 16px 0; border-bottom: 1px solid var(--border); }
+    .comment-item:last-child { border-bottom: none; }
+    .comment-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .comment-avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; background: rgba(71,194,255,0.15); color: var(--accent3); }
+    .comment-author { font-size: 13px; font-weight: 500; }
+    .comment-time { font-size: 11px; color: var(--muted); }
+    .comment-text { font-size: 14px; color: var(--muted); line-height: 1.7; }
+    .comment-form { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+    .comment-input { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 12px 14px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 300; outline: none; transition: border-color .3s; border-radius: 2px; width: 100%; resize: vertical; min-height: 80px; }
+    .comment-input:focus { border-color: var(--accent1); }
+    .comment-input::placeholder { color: var(--muted); }
+    .comment-submit { background: var(--accent1); color: #000; border: none; padding: 10px 20px; font-size: 12px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; font-family: 'DM Sans', sans-serif; border-radius: 2px; align-self: flex-end; transition: transform .2s; }
+    .comment-submit:hover { transform: translateY(-2px); }
+
+    /* ALERT */
+    .alert { padding: 10px 14px; border-radius: 2px; font-size: 13px; display: none; margin-bottom: 4px; }
+    .alert.show { display: block; }
+    .alert.error { background: rgba(255,77,109,0.1); border: 1px solid rgba(255,77,109,0.3); color: var(--accent2); }
+    .alert.success { background: rgba(232,255,71,0.08); border: 1px solid rgba(232,255,71,0.3); color: var(--accent1); }
+
+    /* NOT LOGGED IN */
+    .login-prompt { text-align: center; padding: 80px 24px; }
+    .login-prompt h2 { font-family: 'Bebas Neue', sans-serif; font-size: 40px; margin-bottom: 12px; }
+    .login-prompt p { color: var(--muted); font-size: 15px; margin-bottom: 28px; }
+    .login-prompt a { background: var(--accent1); color: #000; padding: 14px 32px; font-size: 13px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; text-decoration: none; border-radius: 2px; display: inline-block; }
+
+    @media (max-width: 900px) {
+      nav { padding: 16px 20px; }
+      .nav-links { display: none; }
+      .container { padding: 90px 16px 40px; }
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { position: static; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <!-- NAV -->
+  <nav>
+    <a href="nextnova.html" class="logo">NEXTNOVA</a>
+    <ul class="nav-links">
+      <li><a href="nextnova.html">Home</a></li>
+      <li><a href="forum.html" class="active">Forum</a></li>
+      <li><a href="dashboard.html">Dashboard</a></li>
+    </ul>
+    <div class="nav-user">
+      <span class="nav-username" id="navUsername">...</span>
+      <button class="nav-logout" onclick="handleLogout()">Logout</button>
+    </div>
+  </nav>
+
+  <div class="container" id="mainContent">
+    <!-- Content injected by JS -->
+  </div>
+
+  <!-- NEW POST MODAL -->
+  <div class="modal-overlay" id="newPostModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>NEUER BEITRAG</h2>
+        <button class="modal-close" onclick="closeModal('newPostModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="alert" id="postAlert"></div>
+        <div class="form-group">
+          <label class="form-label">Titel</label>
+          <input type="text" class="form-input" id="postTitle" placeholder="Worum geht es?" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Kategorie</label>
+          <select class="form-select" id="postCategory">
+            <option value="KI Projekt">🤖 KI Projekt</option>
+            <option value="Diskussion">💬 Diskussion</option>
+            <option value="Tutorial">📚 Tutorial</option>
+            <option value="News">📰 News</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Inhalt</label>
+          <textarea class="form-input" id="postContent" placeholder="Schreib deinen Beitrag..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="closeModal('newPostModal')">Abbrechen</button>
+        <button class="btn-submit" id="submitPostBtn" onclick="submitPost()">Veröffentlichen →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- POST DETAIL MODAL -->
+  <div class="detail-overlay" id="detailModal">
+    <div class="detail-modal" id="detailContent">
+      <!-- filled by JS -->
+    </div>
+  </div>
+
+  <script>
+    // ─── Supabase ────────────────────────────────────────────────
+    const { createClient } = supabase;
+    const sb = createClient(
+      'https://qegdrvvxgiczozqwmyyx.supabase.co',
+      'sb_publishable_T2bgxhXqpjZz63xVwojR-Q_Im6knDeF'
+    );
+
+    let currentUser = null;
+    let currentFilter = 'Alle';
+    let totalPosts = 0;
+    let totalUsers = 0;
+
+    // ─── Cursor ──────────────────────────────────────────────────
+    const cursor = document.getElementById('cursor');
+    const ring = document.getElementById('cursorRing');
+    let mx=0,my=0,rx=0,ry=0;
+    document.addEventListener('mousemove', e => { mx=e.clientX; my=e.clientY; });
+    (function animCursor() {
+      cursor.style.left=mx+'px'; cursor.style.top=my+'px';
+      rx+=(mx-rx)*.12; ry+=(my-ry)*.12;
+      ring.style.left=rx+'px'; ring.style.top=ry+'px';
+      requestAnimationFrame(animCursor);
+    })();
+
+    // ─── Init ────────────────────────────────────────────────────
+    async function init() {
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) {
+        showLoginPrompt(); return;
+      }
+      currentUser = session.user;
+      document.getElementById('navUsername').textContent = 
+        currentUser.user_metadata?.full_name || currentUser.email.split('@')[0];
+      renderForum();
+      loadPosts();
+    }
+
+    // ─── Render Forum Layout ─────────────────────────────────────
+    function renderForum() {
+      document.getElementById('mainContent').innerHTML = `
+        <div class="forum-header">
+          <h1>NEXTNOVA <span>FORUM</span></h1>
+          <button class="new-post-btn" onclick="openModal('newPostModal')">+ Neuer Beitrag</button>
+        </div>
+        <div class="categories">
+          <button class="cat-btn active" onclick="filterPosts('Alle', this)">Alle</button>
+          <button class="cat-btn" onclick="filterPosts('KI Projekt', this)">🤖 KI Projekt</button>
+          <button class="cat-btn" onclick="filterPosts('Diskussion', this)">💬 Diskussion</button>
+          <button class="cat-btn" onclick="filterPosts('Tutorial', this)">📚 Tutorial</button>
+          <button class="cat-btn" onclick="filterPosts('News', this)">📰 News</button>
+        </div>
+        <div class="layout">
+          <div>
+            <div class="posts-list" id="postsList">
+              <div class="loading">
+                <div class="loading-spinner"></div>
+                Beiträge werden geladen...
+              </div>
+            </div>
+          </div>
+          <div class="sidebar">
+            <div class="sidebar-card">
+              <div class="sidebar-title">Community Stats</div>
+              <div class="sidebar-stat"><span>Beiträge</span><span class="sidebar-stat-num" id="statPosts">—</span></div>
+              <div class="sidebar-stat"><span>Mitglieder</span><span class="sidebar-stat-num" id="statUsers">—</span></div>
+              <div class="sidebar-stat"><span>Online</span><span class="sidebar-stat-num" style="color:var(--accent3)">1</span></div>
+            </div>
+            <div class="sidebar-card">
+              <div class="sidebar-title">Community Regeln</div>
+              <div class="rule-item"><span class="rule-num">01</span><span>Respektvoller Umgang miteinander</span></div>
+              <div class="rule-item"><span class="rule-num">02</span><span>Nur relevante KI-Themen</span></div>
+              <div class="rule-item"><span class="rule-num">03</span><span>Kein Spam oder Werbung</span></div>
+              <div class="rule-item"><span class="rule-num">04</span><span>Quellen angeben bei Tutorials</span></div>
+              <div class="rule-item"><span class="rule-num">05</span><span>Hilf anderen — gemeinsam wachsen</span></div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // ─── Load Posts ──────────────────────────────────────────────
+    async function loadPosts(filter = 'Alle') {
+      let query = sb.from('posts').select('*').order('created_at', { ascending: false });
+      if (filter !== 'Alle') query = query.eq('category', filter);
+
+      const { data: posts, error } = await query;
+      const list = document.getElementById('postsList');
+      if (!list) return;
+
+      // Update stats
+      const { count } = await sb.from('posts').select('*', { count: 'exact', head: true });
+      const statEl = document.getElementById('statPosts');
+      if (statEl) statEl.textContent = count || 0;
+
+      if (error || !posts || posts.length === 0) {
+        list.innerHTML = `
+          <div class="empty">
+            <div class="empty-icon">💬</div>
+            <h3>NOCH KEINE BEITRÄGE</h3>
+            <p style="color:var(--muted);font-size:14px;margin-top:8px;">Sei der Erste und erstelle einen Beitrag!</p>
+          </div>`;
+        return;
+      }
+
+      list.innerHTML = posts.map(post => `
+        <div class="post-card" onclick="openPost(${post.id})">
+          <div class="post-card-header">
+            <div class="post-title">${escHtml(post.title)}</div>
+            <span class="post-category ${getCatClass(post.category)}">${post.category}</span>
+          </div>
+          <p class="post-preview">${escHtml(post.content)}</p>
+          <div class="post-footer">
+            <div class="post-meta">
+              <div class="post-avatar">${getInitials(post.author_name)}</div>
+              ${escHtml(post.author_name)}
+            </div>
+            <div class="post-meta">🕐 ${timeAgo(post.created_at)}</div>
+            <button class="like-btn ${hasLiked(post.id) ? 'liked' : ''}" onclick="toggleLike(event, ${post.id}, ${post.likes})">
+              ❤️ ${post.likes || 0}
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // ─── Filter ──────────────────────────────────────────────────
+    function filterPosts(cat, btn) {
+      currentFilter = cat;
+      document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      loadPosts(cat);
+    }
+
+    // ─── Submit Post ─────────────────────────────────────────────
+    async function submitPost() {
+      const title = document.getElementById('postTitle').value.trim();
+      const content = document.getElementById('postContent').value.trim();
+      const category = document.getElementById('postCategory').value;
+      const alertEl = document.getElementById('postAlert');
+
+      if (!title || !content) {
+        alertEl.className = 'alert error show';
+        alertEl.textContent = '⚠️ Bitte Titel und Inhalt ausfüllen.';
+        return;
+      }
+
+      const btn = document.getElementById('submitPostBtn');
+      btn.disabled = true; btn.textContent = 'Wird veröffentlicht...';
+
+      const authorName = currentUser.user_metadata?.full_name || currentUser.email.split('@')[0];
+      const { error } = await sb.from('posts').insert({
+        user_id: currentUser.id,
+        title, content, category,
+        author_name: authorName,
+        likes: 0
+      });
+
+      btn.disabled = false; btn.textContent = 'Veröffentlichen →';
+
+      if (error) {
+        alertEl.className = 'alert error show';
+        alertEl.textContent = '❌ Fehler: ' + error.message;
+      } else {
+        closeModal('newPostModal');
+        document.getElementById('postTitle').value = '';
+        document.getElementById('postContent').value = '';
+        loadPosts(currentFilter);
+      }
+    }
+
+    // ─── Open Post Detail ────────────────────────────────────────
+    async function openPost(id) {
+      const overlay = document.getElementById('detailModal');
+      const content = document.getElementById('detailContent');
+      overlay.classList.add('show');
+      content.innerHTML = `<div class="loading" style="padding:60px"><div class="loading-spinner"></div>Wird geladen...</div>`;
+
+      const { data: post } = await sb.from('posts').select('*').eq('id', id).single();
+      const { data: comments } = await sb.from('comments').select('*').eq('post_id', id).order('created_at', { ascending: true });
+
+      content.innerHTML = `
+        <div class="detail-header">
+          <div>
+            <span class="detail-category ${getCatClass(post.category)}">${post.category}</span>
+          </div>
+          <div class="detail-title">${escHtml(post.title)}</div>
+          <div class="detail-meta">
+            <span>👤 ${escHtml(post.author_name)}</span>
+            <span>🕐 ${timeAgo(post.created_at)}</span>
+            <span>❤️ ${post.likes || 0} Likes</span>
+          </div>
+        </div>
+        <div class="detail-content">${escHtml(post.content)}</div>
+        <div class="detail-actions">
+          <button class="detail-like-btn ${hasLiked(id) ? 'liked' : ''}" onclick="toggleLike(event, ${id}, ${post.likes}, true)">
+            ❤️ Like (${post.likes || 0})
+          </button>
+          <button class="detail-close-btn" onclick="closeModal('detailModal')">✕ Schließen</button>
+        </div>
+        <div class="comments-section">
+          <div class="comments-title">Kommentare (${comments?.length || 0})</div>
+          <div id="commentsList">
+            ${comments && comments.length > 0 ? comments.map(c => `
+              <div class="comment-item">
+                <div class="comment-header">
+                  <div class="comment-avatar">${getInitials(c.author_name)}</div>
+                  <span class="comment-author">${escHtml(c.author_name)}</span>
+                  <span class="comment-time">${timeAgo(c.created_at)}</span>
+                </div>
+                <div class="comment-text">${escHtml(c.content)}</div>
+              </div>
+            `).join('') : '<p style="color:var(--muted);font-size:14px;padding:16px 0;">Noch keine Kommentare. Sei der Erste!</p>'}
+          </div>
+          <div class="comment-form">
+            <textarea class="comment-input" id="commentInput" placeholder="Schreib einen Kommentar..."></textarea>
+            <button class="comment-submit" onclick="submitComment(${id})">Kommentieren →</button>
+          </div>
+        </div>
+      `;
+    }
+
+    // ─── Submit Comment ──────────────────────────────────────────
+    async function submitComment(postId) {
+      const content = document.getElementById('commentInput').value.trim();
+      if (!content) return;
+      const authorName = currentUser.user_metadata?.full_name || currentUser.email.split('@')[0];
+      const { error } = await sb.from('comments').insert({
+        post_id: postId,
+        user_id: currentUser.id,
+        content,
+        author_name: authorName
+      });
+      if (!error) openPost(postId);
+    }
+
+    // ─── Like ────────────────────────────────────────────────────
+    const likedPosts = JSON.parse(localStorage.getItem('likedPosts') || '[]');
+    function hasLiked(id) { return likedPosts.includes(id); }
+
+    async function toggleLike(e, id, currentLikes, isDetail = false) {
+      e.stopPropagation();
+      if (hasLiked(id)) return;
+      likedPosts.push(id);
+      localStorage.setItem('likedPosts', JSON.stringify(likedPosts));
+      await sb.from('posts').update({ likes: (currentLikes || 0) + 1 }).eq('id', id);
+      if (isDetail) { openPost(id); } else { loadPosts(currentFilter); }
+    }
+
+    // ─── Logout ──────────────────────────────────────────────────
+    async function handleLogout() {
+      await sb.auth.signOut();
+      window.location.href = 'auth.html';
+    }
+
+    // ─── Modal ───────────────────────────────────────────────────
+    function openModal(id) { document.getElementById(id).classList.add('show'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal('newPostModal'); closeModal('detailModal'); } });
+
+    // ─── Login Prompt ────────────────────────────────────────────
+    function showLoginPrompt() {
+      document.getElementById('navUsername').textContent = '';
+      document.getElementById('mainContent').innerHTML = `
+        <div class="login-prompt">
+          <h2>BITTE ERST EINLOGGEN</h2>
+          <p>Du musst eingeloggt sein um das Forum zu nutzen.</p>
+          <a href="auth.html">Zum Login →</a>
+        </div>`;
+    }
+
+    // ─── Helpers ─────────────────────────────────────────────────
+    function escHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function getInitials(name) {
+      if (!name) return '?';
+      return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2);
+    }
+    function getCatClass(cat) {
+      const map = { 'KI Projekt': 'cat-ki', 'Diskussion': 'cat-diskussion', 'Tutorial': 'cat-tutorial', 'News': 'cat-news' };
+      return map[cat] || 'cat-ki';
+    }
+    function timeAgo(dateStr) {
+      const diff = Date.now() - new Date(dateStr).getTime();
+      const mins = Math.floor(diff/60000);
+      if (mins < 1) return 'Gerade eben';
+      if (mins < 60) return `vor ${mins} Min.`;
+      const hours = Math.floor(mins/60);
+      if (hours < 24) return `vor ${hours} Std.`;
+      const days = Math.floor(hours/24);
+      return `vor ${days} Tag${days>1?'en':''}`;
+    }
+
+    init();
+  </script>
+</body>
+</html>
